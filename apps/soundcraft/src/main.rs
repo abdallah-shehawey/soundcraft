@@ -23,7 +23,7 @@ use soundcraft_engine::Engine;
 use soundcraft_ui_egui::{Services, SoundApp, UiState, dialogs};
 use std::sync::Arc;
 
-struct App(SoundApp, Option<&'static logging::AppLogger>, #[cfg(target_os = "macos")] Option<native_menu::NativeMenu>);
+struct App(SoundApp, Option<&'static logging::AppLogger>, bool, #[cfg(target_os = "macos")] Option<native_menu::NativeMenu>);
 
 /// Sends the title only when it changes, remembered here as X11 and Wayland can't read it back.
 fn set_title(ctx: &egui::Context, title: String) {
@@ -48,12 +48,12 @@ impl eframe::App for App {
             logger.report_audio_thread();
         }
         #[cfg(target_os = "macos")]
-        if let Some(menu) = &mut self.2 {
+        if let Some(menu) = &mut self.3 {
             menu.process(&mut self.0);
         }
         self.0.guarded(|app| app.logic(ctx));
         #[cfg(target_os = "macos")]
-        if let Some(menu) = &mut self.2 {
+        if let Some(menu) = &mut self.3 {
             menu.sync(&self.0);
         }
         // Files dropped on the window: audio on an instrument track or a Sampler window loads
@@ -77,7 +77,7 @@ impl eframe::App for App {
         self.0.ui.ui_scale = self.0.extra.ui_scale;
         // Saved now rather than at exit: the recent list matters most after a crash.
         if self.0.take_recent_changed() {
-            save_prefs(&self.0.ui);
+            save_prefs(&self.0.ui, self.2);
         }
         // With the system menu bar there is no egui bar showing the window and dirty state, so the
         // title carries them; elsewhere the egui menu bar already does.
@@ -103,7 +103,7 @@ impl eframe::App for App {
     }
     fn on_exit(&mut self) {
         self.0.close_autosave();
-        save_prefs(&self.0.ui);
+        save_prefs(&self.0.ui, self.2);
         if let Some(logger) = self.1 {
             logger.report_audio_thread();
         }
@@ -159,12 +159,13 @@ fn load_prefs() -> Option<UiState> {
     }
 }
 
-fn save_prefs(ui: &UiState) {
+/// Save preferences while keeping control-run geometry out of the user's window settings.
+fn save_prefs(ui: &UiState, persist_window: bool) {
     if !prefs_enabled() {
         return;
     }
     if let Some(path) = prefs_path()
-        && let Err(error) = config::save_ui(&path, ui)
+        && let Err(error) = config::save_ui_with_window_policy(&path, ui, persist_window)
     {
         log::warn!("{error}");
     }
@@ -262,7 +263,8 @@ fn main() -> eframe::Result {
     }
 
     let engine = if demo { soundcraft_engine::demo::demo_engine() } else { Engine::default() };
-    let prefs = load_prefs().unwrap_or_default();
+    let persist_window = prefs_enabled() && control_port.is_none();
+    let prefs = starting_prefs(load_prefs().unwrap_or_default(), persist_window);
     let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("SoundCraft")
@@ -273,7 +275,7 @@ fn main() -> eframe::Result {
             .with_app_id("ai.storyteller.soundcraft"),
         // No-preferences and control-channel runs neither restore nor save the native window, so
         // control-channel screenshots start from the same window every time.
-        persist_window: prefs_enabled() && control_port.is_none(),
+        persist_window,
         ..Default::default()
     };
     if let Some(icon) = app_icon() {
@@ -327,11 +329,22 @@ fn main() -> eframe::Result {
             Ok(Box::new(App(
                 app,
                 logger,
+                persist_window,
                 #[cfg(target_os = "macos")]
                 menu,
             )))
         }),
     )
+}
+
+/// Automation starts from fixed geometry while retaining the other interface preferences.
+fn starting_prefs(mut prefs: UiState, persist_window: bool) -> UiState {
+    if !persist_window {
+        let defaults = UiState::default();
+        prefs.window_size = defaults.window_size;
+        prefs.window_maximized = defaults.window_maximized;
+    }
+    prefs
 }
 
 /// A saved window size, or the default when the prefs file holds nonsense (NaN, negative, tiny).
@@ -342,6 +355,15 @@ fn sane_window_size([w, h]: [f32; 2]) -> [f32; 2] {
 #[cfg(test)]
 mod tests {
     use super::set_title;
+
+    #[test]
+    fn control_runs_start_at_the_default_geometry_without_losing_other_preferences() {
+        let saved = super::UiState { window_size: [1100.0, 700.0], window_maximized: true, ui_scale: 1.5, ..Default::default() };
+        let normal = super::starting_prefs(saved.clone(), true);
+        assert_eq!((normal.window_size, normal.window_maximized, normal.ui_scale), ([1100.0, 700.0], true, 1.5));
+        let controlled = super::starting_prefs(saved, false);
+        assert_eq!((controlled.window_size, controlled.window_maximized, controlled.ui_scale), ([1600.0, 1000.0], false, 1.5));
+    }
 
     #[test]
     fn the_title_is_sent_only_when_it_changes() {

@@ -1,5 +1,7 @@
 # UI parity
 
+> **Review follow-up (2026-10-26):** Control-channel runs start at the default window size and preserve the user's saved window geometry when saving other preferences. Regression coverage added; parity scores and estimates unchanged.
+
 > **Last reviewed:** 2026-10-25 · **Last updated:** 2026-10-26 · **Change:** minor (window size and maximized state survive restarts at any interface size; caption buttons on native GNOME Wayland windows, `SOUNDCRAFT_WAYLAND=1`, storytold/egui#3; Tracks and Groups and Clips in dock columns) · **Target:** Avid Pro Tools Ultimate 2026.4.1
 
 How SoundCraft feels in the hands of a Pro Tools user: tools, modes, modifiers, shortcuts,
@@ -69,6 +71,7 @@ Legend: ✅ matches · 🟡 partial · ❌ missing.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-26 | trivial | Control-channel runs start at the default window size and preserve the user's saved window geometry when saving other preferences. Scores and estimates unchanged. |
 | 2026-10-26 | trivial | Window size and maximized state survive restarts at any interface size; standard caption buttons on native GNOME Wayland windows, `SOUNDCRAFT_WAYLAND=1` (storytold/egui#3) |
 | 2026-10-25 | minor | Edit and Mix windows: Tracks and Groups and Clips in full-height dock columns. Readiness estimate unchanged |
 | 2026-10-16 | minor | Track name menu: Scroll Into View brings the track to the top of the Edit window and the left of the Mix. Readiness estimate unchanged |
