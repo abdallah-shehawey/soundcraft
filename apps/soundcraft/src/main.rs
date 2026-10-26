@@ -271,6 +271,9 @@ fn main() -> eframe::Result {
             .with_min_inner_size([960.0, 600.0])
             .with_drag_and_drop(true)
             .with_app_id("ai.storyteller.soundcraft"),
+        // No-preferences and control-channel runs neither restore nor save the native window, so
+        // control-channel screenshots start from the same window every time.
+        persist_window: prefs_enabled() && control_port.is_none(),
         ..Default::default()
     };
     if let Some(icon) = app_icon() {
