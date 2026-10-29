@@ -6,7 +6,7 @@
 
 **Stage: pre-alpha** · next: alpha, ~5% and ~110–180 h away (the alpha gate's three failing workflows)
 
-> **Last reviewed:** 2026-10-24 · **Last updated:** 2026-10-28 · **Change:** trivial (windows reopen at their last size or maximized at any interface size (storytold/egui#3), side panels in dock columns, Auto Pan stereo balance, Clip List Auto Rename, Strip Silence rectangles, Strip Silence Rename, Strip Silence Extract and Separate, Clip Looping dialog, AudioSuite Vari-Fi speed ramps, Auto Pan plugin, Subharmonic plugin, Ring Modulator plugin, Float32 file headroom) · **Target:** Avid Pro Tools Ultimate 2026.4.1
+> **Last reviewed:** 2026-10-24 · **Last updated:** 2026-10-29 · **Change:** trivial (windows reopen at their last size or maximized at any interface size (storytold/egui#3), side panels in dock columns, Auto Pan stereo balance, Clip List Auto Rename, Strip Silence rectangles, Strip Silence Rename, Strip Silence Extract and Separate, Clip Looping dialog, AudioSuite Vari-Fi speed ramps, Auto Pan plugin, Subharmonic plugin, Ring Modulator plugin, Float32 file headroom) · **Target:** Avid Pro Tools Ultimate 2026.4.1
 
 SoundCraft is a clean-room, pure-Rust digital audio workstation that aims at full parity with
 Avid Pro Tools, and then beyond it: faster, open, scriptable and agent-controllable. This page is
@@ -185,6 +185,7 @@ mutated and truncated movies. Field reports from the first public week are track
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-29 | trivial | Native window state stays in the selected settings profile (app.ron); absent settings directories, no-preferences and control runs disable native persistence. Profile-isolation regression added; scores and estimates unchanged. |
 | 2026-10-28 | trivial | Retain native-window persistence and control-run preference isolation across the upstream clap startup and captured-environment refactor. New captured-environment and window-policy regression passed; parity estimates unchanged. |
 | 2026-10-26 | trivial | Control-channel runs start at the default window size and preserve the user's saved window geometry when saving other preferences. Scores and estimates unchanged. |
 | 2026-10-26 | trivial | Progress log: windows reopen at their last size or maximized at any interface size; standard caption buttons on native GNOME Wayland windows, `SOUNDCRAFT_WAYLAND=1` (storytold/egui#3) |

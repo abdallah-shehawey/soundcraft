@@ -224,7 +224,8 @@ fn main() -> eframe::Result {
     }
 
     let engine = if demo { soundcraft_engine::demo::demo_engine() } else { Engine::default() };
-    let persist_window = env.prefs_enabled() && control_port.is_none();
+    let persistence_path = window_persistence_path(&env, control_port);
+    let persist_window = persistence_path.is_some();
     let prefs = starting_prefs(load_prefs(&env).unwrap_or_default(), persist_window);
     let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
@@ -237,6 +238,7 @@ fn main() -> eframe::Result {
         // No-preferences and control-channel runs neither restore nor save the native window, so
         // control-channel screenshots start from the same window every time.
         persist_window,
+        persistence_path,
         ..Default::default()
     };
     if let Some(icon) = app_icon() {
@@ -300,6 +302,14 @@ fn main() -> eframe::Result {
     )
 }
 
+/// Native geometry belongs to the same selected profile as the other preferences.
+fn window_persistence_path(env: &Env, control_port: Option<u16>) -> Option<std::path::PathBuf> {
+    if !env.prefs_enabled() || control_port.is_some() {
+        return None;
+    }
+    env.config_dir.as_ref().map(|dir| dir.join("app.ron"))
+}
+
 /// Automation starts from fixed geometry while retaining the other interface preferences.
 fn starting_prefs(mut prefs: UiState, persist_window: bool) -> UiState {
     if !persist_window {
@@ -318,6 +328,18 @@ fn sane_window_size([w, h]: [f32; 2]) -> [f32; 2] {
 #[cfg(test)]
 mod tests {
     use super::set_title;
+
+    #[test]
+    fn native_window_state_is_isolated_in_the_selected_profile() {
+        let profile = |name: &str| super::Env { config_dir: Some(std::path::PathBuf::from(name)), ..Default::default() };
+        let first = profile("profile-one");
+        let second = profile("profile-two");
+        assert_eq!(super::window_persistence_path(&first, None), Some(std::path::PathBuf::from("profile-one/app.ron")));
+        assert_ne!(super::window_persistence_path(&first, None), super::window_persistence_path(&second, None));
+        assert_eq!(super::window_persistence_path(&first, Some(1234)), None);
+        assert_eq!(super::window_persistence_path(&super::Env::default(), None), None);
+        assert_eq!(super::window_persistence_path(&super::Env { no_prefs: super::switch::Switch::On, ..first }, None), None);
+    }
 
     #[test]
     fn captured_environment_preserves_control_geometry_and_disables_preference_io() {
