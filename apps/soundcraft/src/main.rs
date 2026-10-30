@@ -188,6 +188,8 @@ fn app_icon() -> Option<egui::IconData> {
     eframe::icon_data::from_png_bytes(png).map_err(|e| log::warn!("app icon: {e}")).ok()
 }
 
+/// Start the native audio app with preferences and window storage from the selected profile.
+/// Control and no-preferences sessions leave the user's saved native geometry alone.
 fn main() -> eframe::Result {
     // Windows: the update helper is a copy of this program started with `--finish-update`.
     #[cfg(windows)]
